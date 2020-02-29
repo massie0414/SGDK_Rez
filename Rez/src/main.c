@@ -46,8 +46,8 @@ int main()
 {
     char str[16];
 
-    VDP_setScreenWidth256();
-//    VDP_setScreenWidth320();
+//    VDP_setScreenWidth256();
+    VDP_setScreenWidth320();
 
     // 水平割り込みを有効または無効にします。
     VDP_setHInterrupt(0);
@@ -339,8 +339,8 @@ void drawPoints(
 		u16 x,
 		u16 y
 ){
-    if (flatDrawing)
-    {
+//    if (flatDrawing)
+//    {
     	// フラット
 
         Vect2D_s16 v[4];
@@ -381,30 +381,30 @@ void drawPoints(
                 BMP_drawPolygon(v, 4, col);
             }
         }
-    }
-    else
-    {
+//    }
+//    else
+//    {
     	// ワイヤーフレーム
 
-        Line l;
-        const u16 *line_ind;
-        u16 i;
-
-        l.col = col;
-        line_ind = cube_line_ind;
-
-        i = 12;
-
-        while (i--)
-        {
-            l.pt1 = pts_2D[*line_ind++]; l.pt1.x += x; l.pt1.y += y;
-            l.pt2 = pts_2D[*line_ind++]; l.pt2.x += x; l.pt2.y += y;
-
-            if (BMP_clipLine(&l)) {
-            	BMP_drawLine(&l);
-            }
-        }
-    }
+//        Line l;
+//        const u16 *line_ind;
+//        u16 i;
+//
+//        l.col = col;
+//        line_ind = cube_line_ind;
+//
+//        i = 12;
+//
+//        while (i--)
+//        {
+//            l.pt1 = pts_2D[*line_ind++]; l.pt1.x += x; l.pt1.y += y;
+//            l.pt2 = pts_2D[*line_ind++]; l.pt2.x += x; l.pt2.y += y;
+//
+//            if (BMP_clipLine(&l)) {
+//            	BMP_drawLine(&l);
+//            }
+//        }
+//    }
 }
 
 
