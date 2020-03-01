@@ -2,10 +2,10 @@
 #include "meshs.h"
 
 #define MAX_POINTS  256
+#define CURSOR_SPEED 2
 
 extern Mat3D_f16 MatInv;
 extern Mat3D_f16 Mat;
-
 
 Vect3D_f16 vtab_3D[MAX_POINTS];
 Vect2D_s16 vtab_2D[MAX_POINTS];
@@ -14,13 +14,17 @@ Rotation3D rotation;
 Translation3D translation;
 Transformation3D transformation;
 
-
-
 Vect3D_f16 rotstep;
 
 fix16 camdist;
 
+// フラットかワイヤーフレームか
 u16 flatDrawing;
+
+// カーソルの座標
+fix16 cursor_x = 0;
+fix16 cursor_y = 0;
+fix16 cursor_z = FIX16(20);
 
 
 void updatePointsPos(
@@ -38,8 +42,16 @@ void drawPoints(
 		u16 y
 );
 
-void doActionJoy(u8 numjoy, u16 value);
-void handleJoyEvent(u16 joy, u16 changed, u16 state);
+void doActionJoy(
+		u8 numjoy,
+		u16 value
+);
+
+void handleJoyEvent(
+		u16 joy,
+		u16 changed,
+		u16 state
+);
 
 
 int main()
@@ -98,6 +110,9 @@ int main()
     Vect3D_f16 pts_bg_3D[MAX_POINTS];
     Vect2D_s16 pts_bg_2D[MAX_POINTS];
 
+    Vect3D_f16 pts_cursor_3D[MAX_POINTS];
+    Vect2D_s16 pts_cursor_2D[MAX_POINTS];
+
     fix16 player_x = 0;
     fix16 player_y = 0;
     fix16 player_z = 0;
@@ -106,12 +121,20 @@ int main()
     fix16 line_y = 0;
     fix16 line_z = 0;
 
+    // 背景：平行移動用に
     Vect3D_f16 bg_coord_tmp[LINE_NUM * 2];
-
     for ( s16 i = 0; i < LINE_NUM*2; i++ ) {
     	bg_coord_tmp[i].x = bg_coord[i].x;
     	bg_coord_tmp[i].y = bg_coord[i].y;
     	bg_coord_tmp[i].z = bg_coord[i].z;
+    }
+
+    // カーソル：平行移動用に
+    Vect3D_f16 cursor_coord_tmp[CURSOR_NUM+2];
+    for ( s16 i = 0; i < CURSOR_NUM+2; i++ ) {
+    	cursor_coord_tmp[i].x = cursor_coord[i].x;
+    	cursor_coord_tmp[i].y = cursor_coord[i].y;
+    	cursor_coord_tmp[i].z = cursor_coord[i].z;
     }
 
     while (1)
@@ -124,14 +147,15 @@ int main()
 		);
 
         // do work here
-        rotation.x += rotstep.x;
-        rotation.y += rotstep.y;
-        rotation.z += rotstep.z;
+        rotation.x = rotstep.x;
+        rotation.y = rotstep.y;
+        rotation.z = rotstep.z;
         transformation.rebuildMat = 1;	// 回転情報を変更する場合、１に設定する必要がある
 
         anim++;
         anim %= 10;
 
+        // プレイヤーの投影
         updatePointsPos(
         	&cube_coord,
 			pts_3D,
@@ -140,23 +164,40 @@ int main()
 			anim
 		);
 
-        // なんちゃって平行移動
+        // 背景：なんちゃって平行移動
         for ( s16 i = 0; i < LINE_NUM*2; i++ ) {
         //	bg_coord_tmp[i].x = bg_coord[i].x;
         //	bg_coord_tmp[i].y = bg_coord[i].y;
         	bg_coord_tmp[i].z -= FIX16(2);
 
+        	// ループ
         	if ( bg_coord_tmp[i].z <= FIX16(-20)) {
         		bg_coord_tmp[i].z += FIX16(100);
         	}
         }
 
-        // 背景
+        // 背景の投影
         updatePointsPos(
         	&bg_coord_tmp,
 			pts_bg_3D,
 			pts_bg_2D,
 			LINE_NUM * 2,
+			0
+		);
+
+        // カーソル：なんちゃって平行移動
+        for ( s16 i = 0; i < CURSOR_NUM+2; i++ ) {
+        	cursor_coord_tmp[i].x = cursor_coord[i].x + cursor_x;
+        	cursor_coord_tmp[i].y = cursor_coord[i].y + cursor_y;
+        	cursor_coord_tmp[i].z = cursor_coord[i].z + cursor_z;
+        }
+
+        // カーソルの投影
+        updatePointsPos(
+        	&cursor_coord_tmp,
+			pts_cursor_3D,
+			pts_cursor_2D,
+			CURSOR_NUM+2,
 			0
 		);
 
@@ -170,7 +211,7 @@ int main()
         BMP_clear();
 
 
-        // 背景
+        // 背景の描画
 		Line l;
 		const u16 *line_ind;
 
@@ -196,6 +237,20 @@ int main()
 			}
         }
 
+	    // カーソルの描画
+		l.col = 255;
+		line_ind = cursor_line_ind;
+	    for ( s16 i = 0; i < CURSOR_NUM; i++ ) {
+			l.pt1 = pts_cursor_2D[*line_ind++];
+			l.pt2 = pts_cursor_2D[*line_ind++];
+			if (BMP_clipLine(&l)) {
+				BMP_drawLine(&l);
+			}
+        }
+
+
+
+	    // プレイヤーの描画
 //        drawPoints(0xFF, -100, -100);
 //        drawPoints(0x7F,    0, -100);
 //        drawPoints(0x3F,  100, -100);
@@ -287,6 +342,16 @@ int main()
 //        BMP_drawText("bg[12] z:", 0, y);
 //        fix16ToStr(bg_coord_tmp[12].z, str, 2);
 //        BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("cursor x:", 0, y);
+		fix16ToStr(cursor_x, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("cursor y:", 0, y);
+		fix16ToStr(cursor_y, str, 2);
+		BMP_drawText(str, 10, y);
 
         // ビットマップバッファーを画面に切り替えます。
         // 現在のビットマップバックバッファーを画面にブリットしてから、
@@ -418,7 +483,14 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.y += FIX16(0.2);
             }
             else {
-            	rotstep.x += FIX16(0.05);
+            	if ( cursor_y <= FIX16(20) ) {
+					// カメラの回転
+					rotstep.x -= FIX16(0.05);
+            //	}
+            //	else {
+					// カーソルの移動
+					cursor_y += FIX16(CURSOR_SPEED);
+            	}
             }
         }
 
@@ -428,7 +500,14 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.y -= FIX16(0.2);
             }
             else {
-            	rotstep.x -= FIX16(0.05);
+            	if ( cursor_y >= FIX16(-10) ) {
+                	// カメラの回転
+            		rotstep.x += FIX16(0.05);
+            //	}
+            //	else {
+					// カーソルの移動
+					cursor_y -= FIX16(CURSOR_SPEED);
+            	}
             }
         }
 
@@ -438,7 +517,14 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.x -= FIX16(0.2);
             }
             else {
-            	rotstep.y += FIX16(0.05);
+            	if ( cursor_x >= FIX16(-30) ) {
+					// カメラの回転
+					rotstep.y -= FIX16(0.05);
+            //	}
+            //	else {
+					// カーソルの移動
+					cursor_x -= FIX16(CURSOR_SPEED);
+            	}
             }
         }
 
@@ -448,7 +534,14 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.x += FIX16(0.2);
             }
             else {
-            	rotstep.y -= FIX16(0.05);
+            	if ( cursor_x <= FIX16(30) ) {
+					// カメラの回転
+					rotstep.y += FIX16(0.05);
+            //	}
+            //	else {
+					// カーソルの移動
+					cursor_x += FIX16(CURSOR_SPEED);
+            	}
             }
         }
 
@@ -458,7 +551,7 @@ void doActionJoy(u8 numjoy, u16 value)
             	camdist += FIX16(1.0);
             }
             else {
-            	camdist += FIX16(1);
+            	camdist += FIX16(0.1);
             }
         }
 
@@ -468,7 +561,7 @@ void doActionJoy(u8 numjoy, u16 value)
             	camdist -= FIX16(1.0);
             }
             else {
-            	camdist -= FIX16(1);
+            	camdist -= FIX16(0.1);
             }
         }
 
@@ -478,7 +571,7 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.z += FIX16(1);
             }
             else {
-            	translation.z += FIX16(1);
+            	translation.z += FIX16(0.1);
             }
         }
 
@@ -488,7 +581,7 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.z -= FIX16(1);
             }
             else {
-            	translation.z -= FIX16(1);
+            	translation.z -= FIX16(0.1);
             }
         }
 
