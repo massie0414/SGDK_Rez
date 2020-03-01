@@ -37,9 +37,11 @@ void updatePointsPos(
 
 void drawPoints(
 		Vect2D_s16 *pts_2D,
+		u16 *poly_ind,
+		Vect3D_f16 *face_norm,
 		u8 col,
-		u16 x,
-		u16 y
+		u16 point_num,
+		u16 poly_num
 );
 
 void doActionJoy(
@@ -137,6 +139,21 @@ int main()
     	cursor_coord_tmp[i].z = cursor_coord[i].z;
     }
 
+    // 敵
+    Vect3D_f16 pts_enemy_3D[MAX_POINTS];
+    Vect2D_s16 pts_enemy_2D[MAX_POINTS];
+
+    fix16 enemy_x = FIX16(5);
+    fix16 enemy_y = FIX16(5);
+    fix16 enemy_z = FIX16(100);
+
+    Vect3D_f16 enemy_coord_tmp[ENEMY_NUM];
+    for ( s16 i = 0; i < ENEMY_NUM; i++ ) {
+    	enemy_coord_tmp[i].x = enemy_coord[i].x + enemy_x;
+    	enemy_coord_tmp[i].y = enemy_coord[i].y + enemy_y;
+    	enemy_coord_tmp[i].z = enemy_coord[i].z + enemy_z;
+    }
+
     while (1)
     {
         doActionJoy(JOY_1, JOY_readJoypad(JOY_1));
@@ -201,6 +218,27 @@ int main()
 			0
 		);
 
+        // 敵：なんちゃって平行移動
+        for ( s16 i = 0; i < ENEMY_NUM; i++ ) {
+        	enemy_coord_tmp[i].x = enemy_coord[i].x + enemy_x;
+        	enemy_coord_tmp[i].y = enemy_coord[i].y + enemy_y;
+        	enemy_coord_tmp[i].z = enemy_coord[i].z + enemy_z;
+        }
+    	// ループ
+        enemy_z -= FIX16(1);
+    	if ( enemy_z <= FIX16(-20)) {
+    		enemy_z += FIX16(150);
+    	}
+
+        // 敵：投影
+        updatePointsPos(
+        	&enemy_coord_tmp,
+			pts_enemy_3D,
+			pts_enemy_2D,
+			ENEMY_NUM,
+			0
+		);
+
         // フリップ要求が保留されなくなるまで待ちます。
         BMP_waitWhileFlipRequestPending();
 
@@ -248,20 +286,25 @@ int main()
 			}
         }
 
-
+	    // 敵：描画
+	    drawPoints(
+	    		pts_enemy_2D,
+				enemy_poly_ind,
+				enemy_face_norm,
+				0x02,
+				ENEMY_NUM,
+				1
+		);
 
 	    // プレイヤーの描画
-//        drawPoints(0xFF, -100, -100);
-//        drawPoints(0x7F,    0, -100);
-//        drawPoints(0x3F,  100, -100);
-
-//        drawPoints(0xFF, -100,    0);
-        drawPoints(pts_2D, 0x7F, 0, 0);
-//        drawPoints(0x3F,  100,    0);
-
-//        drawPoints(0xFF, -100,  100);
-//        drawPoints(0x7F,    0,  100);
-//        drawPoints(0x3F,  100,  100);
+        drawPoints(
+        		pts_2D,
+				cube_poly_ind,
+				cube_face_norm,
+				0x02,
+				4,
+				6
+		);
 
         int y = 2;
 //        BMP_drawText("trans x:", 0, y);
@@ -343,14 +386,29 @@ int main()
 //        fix16ToStr(bg_coord_tmp[12].z, str, 2);
 //        BMP_drawText(str, 10, y);
 
+//		y++;
+//		BMP_drawText("cursor x:", 0, y);
+//		fix16ToStr(cursor_x, str, 2);
+//		BMP_drawText(str, 10, y);
+//
+//		y++;
+//		BMP_drawText("cursor y:", 0, y);
+//		fix16ToStr(cursor_y, str, 2);
+//		BMP_drawText(str, 10, y);
+
 		y++;
-		BMP_drawText("cursor x:", 0, y);
-		fix16ToStr(cursor_x, str, 2);
+		BMP_drawText("enemy x:", 0, y);
+		fix16ToStr(enemy_x, str, 2);
 		BMP_drawText(str, 10, y);
 
 		y++;
-		BMP_drawText("cursor y:", 0, y);
-		fix16ToStr(cursor_y, str, 2);
+		BMP_drawText("enemy y:", 0, y);
+		fix16ToStr(enemy_y, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("enemy z:", 0, y);
+		fix16ToStr(enemy_z, str, 2);
 		BMP_drawText(str, 10, y);
 
         // ビットマップバッファーを画面に切り替えます。
@@ -400,38 +458,33 @@ void updatePointsPos(
 
 void drawPoints(
 		Vect2D_s16 *pts_2D,
+		u16 *poly_ind,
+		Vect3D_f16 *face_norm,
 		u8 col,
-		u16 x,
-		u16 y
+		u16 point_num,
+		u16 poly_num
 ){
 //    if (flatDrawing)
 //    {
     	// フラット
 
-        Vect2D_s16 v[4];
+        Vect2D_s16 v[point_num];
         const Vect3D_f16 *norm;
-        const u16 *poly_ind;
-        u16 i;
+        const u16 *tmp_poly_ind;
+        u16 i = poly_num;
 
-        norm = cube_face_norm;
-        poly_ind = cube_poly_ind;
-
-        i = 6;
+        norm = face_norm;
+        tmp_poly_ind = poly_ind;
 
         while (i--)
         {
             Vect2D_s16 *pt_dst = v;
             fix16 dp;
-            u8 col = 2;
 
-            *pt_dst = pts_2D[*poly_ind++];
-            pt_dst->x += x;
-            pt_dst->y += y;
-            pt_dst++;
-
-            *pt_dst = pts_2D[*poly_ind++]; pt_dst->x += x; pt_dst->y += y; pt_dst++;
-            *pt_dst = pts_2D[*poly_ind++]; pt_dst->x += x; pt_dst->y += y; pt_dst++;
-            *pt_dst = pts_2D[*poly_ind++]; pt_dst->x += x; pt_dst->y += y; pt_dst++;
+            for ( s16 j = 0; j < point_num; j++ ) {
+				*pt_dst = pts_2D[*tmp_poly_ind++];
+				pt_dst++;
+            }
 
             dp = fix16Mul(transformation.lightInv.x, norm->x) +
                  fix16Mul(transformation.lightInv.y, norm->y) +
@@ -442,8 +495,8 @@ void drawPoints(
             	col += (dp >> (FIX16_FRAC_BITS - 2));
             }
 
-            if (!BMP_isPolygonCulled(v, 4)){
-                BMP_drawPolygon(v, 4, col);
+            if (!BMP_isPolygonCulled(v, point_num)){
+                BMP_drawPolygon(v, point_num, col);
             }
         }
 //    }
@@ -517,14 +570,14 @@ void doActionJoy(u8 numjoy, u16 value)
             	translation.x -= FIX16(0.2);
             }
             else {
-            	if ( cursor_x >= FIX16(-30) ) {
+            //	if ( cursor_x >= FIX16(-30) ) {
 					// カメラの回転
 					rotstep.y -= FIX16(0.05);
             //	}
             //	else {
 					// カーソルの移動
 					cursor_x -= FIX16(CURSOR_SPEED);
-            	}
+            //	}
             }
         }
 
