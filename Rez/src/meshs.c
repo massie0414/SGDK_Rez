@@ -223,7 +223,6 @@ const Vect3D_f16 cursor_coord[CURSOR_NUM+2] =
 
 		{FIX16( 1),FIX16( 0),FIX16(0)},
 		{FIX16(-1),FIX16( 0),FIX16(0)},
-
 };
 
 // ワイヤーフレーム
@@ -238,6 +237,49 @@ const u16 cursor_line_ind[CURSOR_NUM*2] =
 		6, 7,
 };
 
+// Aボタンを押したときの反応
+const Vect3D_f16 cursor_a_coord[CURSOR_A_ANIM][CURSOR_A_NUM] =
+{
+		{
+			{FIX16(-2.2),FIX16( 2.2),FIX16(0)},
+			{FIX16(-2.2),FIX16(-2.2),FIX16(0)},
+			{FIX16( 2.2),FIX16( 2.2),FIX16(0)},
+			{FIX16( 2.2),FIX16(-2.2),FIX16(0)},
+		},
+		{
+			{FIX16(-2.4),FIX16( 2.4),FIX16(0)},
+			{FIX16(-2.4),FIX16(-2.4),FIX16(0)},
+			{FIX16( 2.4),FIX16( 2.4),FIX16(0)},
+			{FIX16( 2.4),FIX16(-2.4),FIX16(0)},
+		},
+		{
+			{FIX16(-2.6),FIX16( 2.6),FIX16(0)},
+			{FIX16(-2.6),FIX16(-2.6),FIX16(0)},
+			{FIX16( 2.6),FIX16( 2.6),FIX16(0)},
+			{FIX16( 2.6),FIX16(-2.6),FIX16(0)},
+		},
+		{
+			{FIX16(-2.8),FIX16( 2.8),FIX16(0)},
+			{FIX16(-2.8),FIX16(-2.8),FIX16(0)},
+			{FIX16( 2.8),FIX16( 2.8),FIX16(0)},
+			{FIX16( 2.8),FIX16(-2.8),FIX16(0)},
+		},
+		{
+			{FIX16(-3.0),FIX16( 3.0),FIX16(0)},
+			{FIX16(-3.0),FIX16(-3.0),FIX16(0)},
+			{FIX16( 3.0),FIX16( 3.0),FIX16(0)},
+			{FIX16( 3.0),FIX16(-3.0),FIX16(0)},
+		},
+};
+
+// Aボタンを押したときの反応：ワイヤーフレーム
+const u16 cursor_a_line_ind[CURSOR_A_NUM*2] =
+{
+		0, 1,
+		1, 3,
+		3, 2,
+		2, 0,
+};
 
 
 

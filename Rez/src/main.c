@@ -1,5 +1,6 @@
 #include "genesis.h"
 #include "meshs.h"
+#include "resource.h"
 
 #define MAX_POINTS  256
 #define CURSOR_SPEED 2
@@ -44,9 +45,10 @@ void drawPoints(
 		u16 poly_num
 );
 
-void doActionJoy(
+u16 doActionJoy(
 		u8 numjoy,
-		u16 value
+		u16 value,
+		u16 last_key
 );
 
 void handleJoyEvent(
@@ -55,8 +57,7 @@ void handleJoyEvent(
 		u16 state
 );
 
-
-Sprite* sprites[3];
+s16 anim_a = 0;	// 0の時は非表示
 
 int main()
 {
@@ -119,6 +120,9 @@ int main()
     Vect3D_f16 pts_cursor_3D[MAX_POINTS];
     Vect2D_s16 pts_cursor_2D[MAX_POINTS];
 
+    Vect3D_f16 pts_cursor_a_3D[MAX_POINTS];
+    Vect2D_s16 pts_cursor_a_2D[MAX_POINTS];
+
     // 背景：平行移動用に
     Vect3D_f16 bg_coord_tmp[LINE_NUM * 2];
     for ( s16 i = 0; i < LINE_NUM*2; i++ ) {
@@ -133,6 +137,16 @@ int main()
     	cursor_coord_tmp[i].x = cursor_coord[i].x;
     	cursor_coord_tmp[i].y = cursor_coord[i].y;
     	cursor_coord_tmp[i].z = cursor_coord[i].z;
+    }
+
+    // カーソル：Aボタンを押したときのエフェクト的な
+    Vect3D_f16 cursor_a_coord_tmp[CURSOR_A_ANIM][CURSOR_A_NUM];
+    for ( s16 j = 0; j < 5; j++ ) {
+			for ( s16 i = 0; i < CURSOR_A_NUM; i++ ) {
+			cursor_a_coord_tmp[j][i].x = cursor_a_coord[j][i].x;
+			cursor_a_coord_tmp[j][i].y = cursor_a_coord[j][i].y;
+			cursor_a_coord_tmp[j][i].z = cursor_a_coord[j][i].z;
+		}
     }
 
     // 敵
@@ -150,40 +164,59 @@ int main()
     	enemy_coord_tmp[i].z = enemy_coord[i].z + enemy_z;
     }
 
+    // 色の実験
+//    u16 palette_test[16] =
+//    {
+//        0x0000,
+//        0x0222,
+//        0x0444,
+//        0x0666,
+//        0x0888,
+//        0x0AAA,
+//        0x0CCC,
+//        0x0EEE,
+//
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE,
+//        0x0EEE
+//    };
+//
+//    s16 color = 0x0000;
+
+    // BGMの初期化
+//    SND_setVolume_4PCM_ENV(
+//            SOUND_PCM_CH1, // @suppress("Symbol is not resolved")
+//            15    // Volume to set : 16 possible level from 0 (minimum) to 15 (maximum).
+//    );
+//    SND_setVolume_4PCM_ENV(
+//            SOUND_PCM_CH2, // @suppress("Symbol is not resolved")
+//            15    // Volume to set : 16 possible level from 0 (minimum) to 15 (maximum).
+//    );
+//    SND_setVolume_4PCM_ENV(
+//            SOUND_PCM_CH3, // @suppress("Symbol is not resolved")
+//            15    // Volume to set : 16 possible level from 0 (minimum) to 15 (maximum).
+//    );
+//    SND_setVolume_4PCM_ENV(
+//            SOUND_PCM_CH4, // @suppress("Symbol is not resolved")
+//            15    // Volume to set : 16 possible level from 0 (minimum) to 15 (maximum).
+//    );
 
 
+    // BGMの再生
+//    SND_startPlay_XGM(BGM_SAMPLE);
 
-
-    u16 palette_test[16] =
-    {
-        0x0000,
-        0x0222,
-        0x0444,
-        0x0666,
-        0x0888,
-        0x0AAA,
-        0x0CCC,
-        0x0EEE,
-
-        0x0EEE,
-        0x0EEE,
-        0x0EEE,
-        0x0EEE,
-        0x0EEE,
-        0x0EEE,
-        0x0EEE,
-        0x0EEE
-    };
-
-    s16 color = 0x0000;
-
-
+    u16 last_key = 0;
 
     SYS_enableInts();
 
     while (1)
     {
-        doActionJoy(JOY_1, JOY_readJoypad(JOY_1));
+        last_key = doActionJoy(JOY_1, JOY_readJoypad(JOY_1), last_key);
 
         // カメラシーンの距離を設定します。
         M3D_setCamDistance(
@@ -221,8 +254,8 @@ int main()
         }
 
         // 背景の投影
-        updatePointsPos(
-        	&bg_coord_tmp,
+		updatePointsPos(
+			&bg_coord_tmp,
 			pts_bg_3D,
 			pts_bg_2D,
 			LINE_NUM * 2,
@@ -244,6 +277,28 @@ int main()
 			CURSOR_NUM+2,
 			0
 		);
+
+        if ( anim_a == 1 ) {
+        	for ( s16 j = 0; j < CURSOR_A_ANIM; j++ ) {
+				for ( s16 i = 0; i < CURSOR_A_NUM; i++ ) {
+					cursor_a_coord_tmp[j][i].x = cursor_a_coord[j][i].x + cursor_x;
+					cursor_a_coord_tmp[j][i].y = cursor_a_coord[j][i].y + cursor_y;
+					cursor_a_coord_tmp[j][i].z = cursor_a_coord[j][i].z + cursor_z;
+				}
+        	}
+        }
+
+        // カーソルの投影:Aボタン
+        if ( anim_a >= 1 ) {
+			updatePointsPos(
+				&cursor_a_coord_tmp,
+				pts_cursor_a_3D,
+				pts_cursor_a_2D,
+				CURSOR_A_NUM,
+				anim_a-1
+			);
+			anim_a++;
+		}
 
         // 敵：なんちゃって平行移動
         for ( s16 i = 0; i < ENEMY_NUM; i++ ) {
@@ -312,6 +367,22 @@ int main()
 				BMP_drawLine(&l);
 			}
         }
+
+	    // カーソルの描画：Aボタン
+	    if ( anim_a > 0 ) {
+			l.col = 255;
+			line_ind = cursor_a_line_ind;
+			for ( s16 i = 0; i < CURSOR_A_NUM; i++ ) {
+				l.pt1 = pts_cursor_a_2D[*line_ind++];
+				l.pt2 = pts_cursor_a_2D[*line_ind++];
+				if (BMP_clipLine(&l)) {
+					BMP_drawLine(&l);
+				}
+			}
+			if ( anim_a > CURSOR_A_ANIM ) {
+				anim_a = 0;
+			}
+	    }
 
 	    // 敵：描画
 	    drawPoints(
@@ -452,16 +523,37 @@ int main()
 		BMP_drawText(str, 10, y);
 
     	// 色変更の実験
-		color++;
-		for ( int i = 1; i < 16; i++ ) {
-			palette_test[i] = color;
-		}
-		VDP_setPaletteColors(0, (u16*) palette_test, 16);
+//		color++;
+//		for ( int i = 0; i < 1; i++ ) {
+//			palette_test[i] = color;
+//		}
+//		VDP_setPaletteColors(0, (u16*) palette_test, 16);
+//
+//		y++;
+//		BMP_drawText("color:", 0, y);
+//		intToStr(color, str, 2);
+//		BMP_drawText(str, 10, y);
 
 		y++;
-		BMP_drawText("color:", 0, y);
-		intToStr(color, str, 2);
+		BMP_drawText("last_key:", 0, y);
+		intToStr(last_key, str, 2);
 		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("JOY_1:", 0, y);
+		intToStr(JOY_readJoypad(JOY_1), str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("JOY_1_A:", 0, y);
+		intToStr((JOY_readJoypad(JOY_1) & BUTTON_A), str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("ANIM_A:", 0, y);
+		intToStr(anim_a, str, 2);
+		BMP_drawText(str, 10, y);
+
 
         // ビットマップバッファーを画面に切り替えます。
         // 現在のビットマップバックバッファーを画面にブリットしてから、
@@ -578,16 +670,38 @@ void drawPoints(
 }
 
 
-void doActionJoy(u8 numjoy, u16 value)
-{
+u16 doActionJoy(
+		u8 numjoy,
+		u16 value,
+		u16 last_key
+){
     if (numjoy == JOY_1)
     {
+    	if ( ( value & BUTTON_A )
+    	   && last_key != BUTTON_A
+		) {
+    		last_key = BUTTON_A;
+			// 効果音
+            SND_setPCM_XGM(64, SE_A, sizeof(SE_A));
+            SND_startPlayPCM_XGM(64, 10, SOUND_PCM_CH2);
+    	}
+
+    	if ( ( value & BUTTON_A ) == 0 ) {
+    		// Aを離した
+    		last_key = 0;
+    	}
+    	else {
+    		// Aを押している
+            // アニメーション開始
+    		anim_a = 1;
+    	}
+
         if (value & BUTTON_UP)
         {
-            if (value & BUTTON_A) {
-            	translation.y += FIX16(0.2);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.y += FIX16(0.2);
+//            }
+//            else {
             	if ( cursor_y <= FIX16(20) ) {
 					// カメラの回転
 					rotstep.x -= FIX16(0.05);
@@ -596,15 +710,15 @@ void doActionJoy(u8 numjoy, u16 value)
 					// カーソルの移動
 					cursor_y += FIX16(CURSOR_SPEED);
             	}
-            }
+//            }
         }
 
         if (value & BUTTON_DOWN)
         {
-            if (value & BUTTON_A) {
-            	translation.y -= FIX16(0.2);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.y -= FIX16(0.2);
+//            }
+//            else {
             	if ( cursor_y >= FIX16(-10) ) {
                 	// カメラの回転
             		rotstep.x += FIX16(0.05);
@@ -613,15 +727,15 @@ void doActionJoy(u8 numjoy, u16 value)
 					// カーソルの移動
 					cursor_y -= FIX16(CURSOR_SPEED);
             	}
-            }
+//            }
         }
 
         if (value & BUTTON_LEFT)
         {
-            if (value & BUTTON_A) {
-            	translation.x -= FIX16(0.2);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.x -= FIX16(0.2);
+//            }
+//            else {
             //	if ( cursor_x >= FIX16(-30) ) {
 					// カメラの回転
 					rotstep.y -= FIX16(0.05);
@@ -630,15 +744,15 @@ void doActionJoy(u8 numjoy, u16 value)
 					// カーソルの移動
 					cursor_x -= FIX16(CURSOR_SPEED);
             //	}
-            }
+//            }
         }
 
         if (value & BUTTON_RIGHT)
         {
-            if (value & BUTTON_A) {
-            	translation.x += FIX16(0.2);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.x += FIX16(0.2);
+//            }
+//            else {
             	if ( cursor_x <= FIX16(30) ) {
 					// カメラの回転
 					rotstep.y += FIX16(0.05);
@@ -647,7 +761,7 @@ void doActionJoy(u8 numjoy, u16 value)
 					// カーソルの移動
 					cursor_x += FIX16(CURSOR_SPEED);
             	}
-            }
+//            }
         }
 
         if (value & BUTTON_Y)
@@ -672,22 +786,22 @@ void doActionJoy(u8 numjoy, u16 value)
 
         if (value & BUTTON_B)
         {
-            if (value & BUTTON_A) {
-            	translation.z += FIX16(1);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.z += FIX16(1);
+//            }
+//            else {
             	translation.z += FIX16(0.1);
-            }
+//            }
         }
 
         if (value & BUTTON_C)
         {
-            if (value & BUTTON_A) {
-            	translation.z -= FIX16(1);
-            }
-            else {
+//            if (value & BUTTON_A) {
+//            	translation.z -= FIX16(1);
+//            }
+//            else {
             	translation.z -= FIX16(0.1);
-            }
+//            }
         }
 
         if (value & BUTTON_START)
@@ -696,6 +810,8 @@ void doActionJoy(u8 numjoy, u16 value)
             rotstep.y = FIX16(0.0);
         }
     }
+
+    return last_key;
 }
 
 void handleJoyEvent(u16 joy, u16 changed, u16 state)
