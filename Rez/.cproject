@@ -46,6 +46,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.1312201009" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -58,6 +60,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.413281139" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -70,6 +74,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.424965390" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -132,6 +138,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.1866016147" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -144,6 +152,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.1625656655" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -156,6 +166,8 @@
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="org.eclipse.cdt.build.core.settings.holder.incpaths.1763508346" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${GDK}/inc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${GDK}/src&quot;"/>
                                     								
                                 </option>
                                 								
@@ -183,6 +195,10 @@
         	
     </storageModule>
     	
+    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+    	
+    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+    	
     <storageModule moduleId="scannerConfiguration">
         		
         <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -192,11 +208,13 @@
             <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
             		
         </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="0.2043717873.1393307329">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
         	
     </storageModule>
-    	
-    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-    	
-    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
     
 </cproject>

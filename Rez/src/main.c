@@ -56,17 +56,21 @@ void handleJoyEvent(
 );
 
 
+Sprite* sprites[3];
+
 int main()
 {
     char str[16];
 
-//    VDP_setScreenWidth256();
+    SYS_disableInts();
+
+//    VDP_setScreenWidth256();	// メモリが少ないのか、ゴミみたいなのが表示される
     VDP_setScreenWidth320();
 
-    // 水平割り込みを有効または無効にします。
+    // 水平割り込みを無効にします。
     VDP_setHInterrupt(0);
 
-    // ハイライト/シャドウ効果を有効または無効にします。
+    // ハイライト/シャドウ効果を無効にします。
     VDP_setHilightShadow(0);
 
     // speed up controller checking
@@ -115,14 +119,6 @@ int main()
     Vect3D_f16 pts_cursor_3D[MAX_POINTS];
     Vect2D_s16 pts_cursor_2D[MAX_POINTS];
 
-    fix16 player_x = 0;
-    fix16 player_y = 0;
-    fix16 player_z = 0;
-
-    fix16 line_x = 0;
-    fix16 line_y = 0;
-    fix16 line_z = 0;
-
     // 背景：平行移動用に
     Vect3D_f16 bg_coord_tmp[LINE_NUM * 2];
     for ( s16 i = 0; i < LINE_NUM*2; i++ ) {
@@ -153,6 +149,37 @@ int main()
     	enemy_coord_tmp[i].y = enemy_coord[i].y + enemy_y;
     	enemy_coord_tmp[i].z = enemy_coord[i].z + enemy_z;
     }
+
+
+
+
+
+    u16 palette_test[16] =
+    {
+        0x0000,
+        0x0222,
+        0x0444,
+        0x0666,
+        0x0888,
+        0x0AAA,
+        0x0CCC,
+        0x0EEE,
+
+        0x0EEE,
+        0x0EEE,
+        0x0EEE,
+        0x0EEE,
+        0x0EEE,
+        0x0EEE,
+        0x0EEE,
+        0x0EEE
+    };
+
+    s16 color = 0x0000;
+
+
+
+    SYS_enableInts();
 
     while (1)
     {
@@ -306,6 +333,19 @@ int main()
 				6
 		);
 
+        // パーティクルテスト（表示はされる）
+        /*
+        Vect2D_u16 part_pos[1];
+        u8 col = 0xFF;
+        s16 num = 1;
+
+        part_pos[0].x = 100;
+        part_pos[0].y = 100;
+
+        BMP_setPixels_V2D(part_pos, col, num);
+        */
+
+        // デバッグ表示
         int y = 2;
 //        BMP_drawText("trans x:", 0, y);
 //        fix16ToStr(translation.x, str, 2);
@@ -409,6 +449,18 @@ int main()
 		y++;
 		BMP_drawText("enemy z:", 0, y);
 		fix16ToStr(enemy_z, str, 2);
+		BMP_drawText(str, 10, y);
+
+    	// 色変更の実験
+		color++;
+		for ( int i = 1; i < 16; i++ ) {
+			palette_test[i] = color;
+		}
+		VDP_setPaletteColors(0, (u16*) palette_test, 16);
+
+		y++;
+		BMP_drawText("color:", 0, y);
+		intToStr(color, str, 2);
 		BMP_drawText(str, 10, y);
 
         // ビットマップバッファーを画面に切り替えます。
