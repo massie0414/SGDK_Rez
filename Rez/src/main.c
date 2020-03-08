@@ -5,11 +5,11 @@
 #define MAX_POINTS  256
 #define CURSOR_SPEED 2
 
-extern Mat3D_f16 MatInv;
-extern Mat3D_f16 Mat;
+//extern Mat3D_f16 MatInv;
+//extern Mat3D_f16 Mat;
 
-Vect3D_f16 vtab_3D[MAX_POINTS];
-Vect2D_s16 vtab_2D[MAX_POINTS];
+//Vect3D_f16 vtab_3D[MAX_POINTS];
+//Vect2D_s16 vtab_2D[MAX_POINTS];
 
 Rotation3D rotation;
 Translation3D translation;
@@ -111,17 +111,23 @@ int main()
     rotstep.x = FIX16(0);
     rotstep.y = FIX16(0);
 
-    Vect3D_f16 pts_3D[MAX_POINTS];
-    Vect2D_s16 pts_2D[MAX_POINTS];
+    Vect3D_f16 pts_3D[PLAYER_NUM];
+    Vect2D_s16 pts_2D[PLAYER_NUM];
 
-    Vect3D_f16 pts_bg_3D[MAX_POINTS];
-    Vect2D_s16 pts_bg_2D[MAX_POINTS];
+    Vect3D_f16 pts_bg_3D[LINE_NUM * 2];
+    Vect2D_s16 pts_bg_2D[LINE_NUM * 2];
 
-    Vect3D_f16 pts_cursor_3D[MAX_POINTS];
-    Vect2D_s16 pts_cursor_2D[MAX_POINTS];
+    Vect3D_f16 pts_cursor_3D[CURSOR_NUM+2];
+    Vect2D_s16 pts_cursor_2D[CURSOR_NUM+2];
 
-    Vect3D_f16 pts_cursor_a_3D[MAX_POINTS];
-    Vect2D_s16 pts_cursor_a_2D[MAX_POINTS];
+    Vect3D_f16 pts_cursor_a_3D[CURSOR_A_NUM];
+    Vect2D_s16 pts_cursor_a_2D[CURSOR_A_NUM];
+
+    Vect3D_f16 pts_enemy_3D[ENEMY_NUM];
+    Vect2D_s16 pts_enemy_2D[ENEMY_NUM];
+
+    Vect3D_f16 pts_enemy_lockon_3D[ENEMY_LOCKON_NUM];
+    Vect2D_s16 pts_enemy_lockon_2D[ENEMY_LOCKON_NUM];
 
     // 背景：平行移動用に
     Vect3D_f16 bg_coord_tmp[LINE_NUM * 2];
@@ -141,7 +147,7 @@ int main()
 
     // カーソル：Aボタンを押したときのエフェクト的な
     Vect3D_f16 cursor_a_coord_tmp[CURSOR_A_ANIM][CURSOR_A_NUM];
-    for ( s16 j = 0; j < 5; j++ ) {
+    for ( s16 j = 0; j < CURSOR_A_ANIM; j++ ) {
 			for ( s16 i = 0; i < CURSOR_A_NUM; i++ ) {
 			cursor_a_coord_tmp[j][i].x = cursor_a_coord[j][i].x;
 			cursor_a_coord_tmp[j][i].y = cursor_a_coord[j][i].y;
@@ -150,9 +156,6 @@ int main()
     }
 
     // 敵
-    Vect3D_f16 pts_enemy_3D[MAX_POINTS];
-    Vect2D_s16 pts_enemy_2D[MAX_POINTS];
-
     fix16 enemy_x = FIX16(5);
     fix16 enemy_y = FIX16(5);
     fix16 enemy_z = FIX16(100);
@@ -162,6 +165,16 @@ int main()
     	enemy_coord_tmp[i].x = enemy_coord[i].x + enemy_x;
     	enemy_coord_tmp[i].y = enemy_coord[i].y + enemy_y;
     	enemy_coord_tmp[i].z = enemy_coord[i].z + enemy_z;
+    }
+
+    // 敵：ロックオン
+    Vect3D_f16 enemy_lockon_coord_tmp[ENEMY_LOCKON_ANIM][ENEMY_LOCKON_NUM];
+    for ( s16 j = 0; j < ENEMY_LOCKON_ANIM; j++ ) {
+			for ( s16 i = 0; i < ENEMY_LOCKON_NUM; i++ ) {
+			enemy_lockon_coord_tmp[j][i].x = enemy_lockon_coord[j][i].x;
+			enemy_lockon_coord_tmp[j][i].y = enemy_lockon_coord[j][i].y;
+			enemy_lockon_coord_tmp[j][i].z = enemy_lockon_coord[j][i].z;
+		}
     }
 
     // 色の実験
@@ -212,6 +225,9 @@ int main()
 
     u16 last_key = 0;
 
+    u8 is_lockon = FALSE;
+    s16 anim_lockon = 0;
+
     SYS_enableInts();
 
     while (1)
@@ -237,7 +253,7 @@ int main()
         	&cube_coord,
 			pts_3D,
 			pts_2D,
-			8,
+			PLAYER_NUM,
 			anim
 		);
 
@@ -297,7 +313,6 @@ int main()
 				CURSOR_A_NUM,
 				anim_a-1
 			);
-			anim_a++;
 		}
 
         // 敵：なんちゃって平行移動
@@ -320,6 +335,44 @@ int main()
 			ENEMY_NUM,
 			0
 		);
+
+        // 敵：ロックオン
+        if ( anim_a == 1
+          && is_lockon == FALSE
+          && pts_cursor_2D[0].x <= pts_enemy_2D[0].x  && pts_enemy_2D[0].x <= pts_cursor_2D[0].x + 48
+          && pts_cursor_2D[0].y <= pts_enemy_2D[0].y  && pts_enemy_2D[0].y <= pts_cursor_2D[0].y + 48
+        ) {
+        	is_lockon = TRUE;
+
+        	// 効果音
+            SND_setPCM_XGM(65, SE_LOCKON, sizeof(SE_LOCKON));
+            SND_startPlayPCM_XGM(65, 10, SOUND_PCM_CH3);
+        }
+
+        if ( is_lockon ) {
+        	for ( s16 j = 0; j < ENEMY_LOCKON_ANIM; j++ ) {
+				for ( s16 i = 0; i < ENEMY_LOCKON_NUM; i++ ) {
+					enemy_lockon_coord_tmp[j][i].x = enemy_lockon_coord[j][i].x + enemy_x;
+					enemy_lockon_coord_tmp[j][i].y = enemy_lockon_coord[j][i].y + enemy_y;
+					enemy_lockon_coord_tmp[j][i].z = enemy_lockon_coord[j][i].z + enemy_z;
+				}
+        	}
+        }
+
+        // 敵：ロックオン
+        if ( is_lockon ) {
+			updatePointsPos(
+				&enemy_lockon_coord_tmp,
+				pts_enemy_lockon_3D,
+				pts_enemy_lockon_2D,
+				ENEMY_LOCKON_NUM,
+				anim_lockon
+			);
+			anim_lockon++;
+			if ( anim_lockon >= ENEMY_LOCKON_ANIM ) {
+				anim_lockon = ENEMY_LOCKON_ANIM-1;	// 最後のアニメーションにとどめておく
+			}
+		}
 
         // フリップ要求が保留されなくなるまで待ちます。
         BMP_waitWhileFlipRequestPending();
@@ -369,7 +422,7 @@ int main()
         }
 
 	    // カーソルの描画：Aボタン
-	    if ( anim_a > 0 ) {
+	    if ( anim_a >= 1 ) {
 			l.col = 255;
 			line_ind = cursor_a_line_ind;
 			for ( s16 i = 0; i < CURSOR_A_NUM; i++ ) {
@@ -379,6 +432,7 @@ int main()
 					BMP_drawLine(&l);
 				}
 			}
+			anim_a++;
 			if ( anim_a > CURSOR_A_ANIM ) {
 				anim_a = 0;
 			}
@@ -393,6 +447,19 @@ int main()
 				ENEMY_NUM,
 				1
 		);
+
+	    // 敵：ロックオン
+	    if ( is_lockon ) {
+			l.col = 255;
+			line_ind = enemy_lockon_line_ind;
+			for ( s16 i = 0; i < ENEMY_LOCKON_NUM; i++ ) {
+				l.pt1 = pts_enemy_lockon_2D[*line_ind++];
+				l.pt2 = pts_enemy_lockon_2D[*line_ind++];
+				if (BMP_clipLine(&l)) {
+					BMP_drawLine(&l);
+				}
+			}
+	    }
 
 	    // プレイヤーの描画
         drawPoints(
@@ -507,20 +574,20 @@ int main()
 //		fix16ToStr(cursor_y, str, 2);
 //		BMP_drawText(str, 10, y);
 
-		y++;
-		BMP_drawText("enemy x:", 0, y);
-		fix16ToStr(enemy_x, str, 2);
-		BMP_drawText(str, 10, y);
-
-		y++;
-		BMP_drawText("enemy y:", 0, y);
-		fix16ToStr(enemy_y, str, 2);
-		BMP_drawText(str, 10, y);
-
-		y++;
-		BMP_drawText("enemy z:", 0, y);
-		fix16ToStr(enemy_z, str, 2);
-		BMP_drawText(str, 10, y);
+//		y++;
+//		BMP_drawText("enemy x:", 0, y);
+//		fix16ToStr(enemy_x, str, 2);
+//		BMP_drawText(str, 10, y);
+//
+//		y++;
+//		BMP_drawText("enemy y:", 0, y);
+//		fix16ToStr(enemy_y, str, 2);
+//		BMP_drawText(str, 10, y);
+//
+//		y++;
+//		BMP_drawText("enemy z:", 0, y);
+//		fix16ToStr(enemy_z, str, 2);
+//		BMP_drawText(str, 10, y);
 
     	// 色変更の実験
 //		color++;
@@ -538,22 +605,46 @@ int main()
 		BMP_drawText("last_key:", 0, y);
 		intToStr(last_key, str, 2);
 		BMP_drawText(str, 10, y);
-
-		y++;
-		BMP_drawText("JOY_1:", 0, y);
-		intToStr(JOY_readJoypad(JOY_1), str, 2);
-		BMP_drawText(str, 10, y);
-
-		y++;
-		BMP_drawText("JOY_1_A:", 0, y);
-		intToStr((JOY_readJoypad(JOY_1) & BUTTON_A), str, 2);
-		BMP_drawText(str, 10, y);
-
+//
+//		y++;
+//		BMP_drawText("JOY_1:", 0, y);
+//		intToStr(JOY_readJoypad(JOY_1), str, 2);
+//		BMP_drawText(str, 10, y);
+//
+//		y++;
+//		BMP_drawText("JOY_1_A:", 0, y);
+//		intToStr((JOY_readJoypad(JOY_1) & BUTTON_A), str, 2);
+//		BMP_drawText(str, 10, y);
+//
 		y++;
 		BMP_drawText("ANIM_A:", 0, y);
 		intToStr(anim_a, str, 2);
 		BMP_drawText(str, 10, y);
 
+		y++;
+		BMP_drawText("is_lockon:", 0, y);
+		intToStr(is_lockon, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("cursor.x:", 0, y);
+		intToStr(pts_cursor_2D[0].x, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("enemy.x:", 0, y);
+		intToStr(pts_enemy_2D[0].x, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("cursor.y:", 0, y);
+		intToStr(pts_cursor_2D[0].y, str, 2);
+		BMP_drawText(str, 10, y);
+
+		y++;
+		BMP_drawText("enemy.y :", 0, y);
+		intToStr(pts_enemy_2D[0].y , str, 2);
+		BMP_drawText(str, 10, y);
 
         // ビットマップバッファーを画面に切り替えます。
         // 現在のビットマップバックバッファーを画面にブリットしてから、
@@ -698,19 +789,13 @@ u16 doActionJoy(
 
         if (value & BUTTON_UP)
         {
-//            if (value & BUTTON_A) {
-//            	translation.y += FIX16(0.2);
-//            }
-//            else {
-            	if ( cursor_y <= FIX16(20) ) {
-					// カメラの回転
-					rotstep.x -= FIX16(0.05);
-            //	}
-            //	else {
-					// カーソルの移動
-					cursor_y += FIX16(CURSOR_SPEED);
-            	}
-//            }
+			if ( cursor_y <= FIX16(20) ) {
+				// カメラの回転
+				rotstep.x -= FIX16(0.05);
+
+				// カーソルの移動
+				cursor_y += FIX16(CURSOR_SPEED);
+			}
         }
 
         if (value & BUTTON_DOWN)
