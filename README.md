@@ -1,4 +1,4 @@
-# タイトル「Rez for SGDK」
+
 
 https://user-images.githubusercontent.com/10183237/151103255-1a2c6c31-ec3c-46b4-afe2-de0a26b3f7e9.mp4
 
